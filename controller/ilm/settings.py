@@ -23,3 +23,6 @@ class Settings:
         self.recycle_workers = parser.getboolean('parameters', 'recycle_workers')
         self.max_instances = parser.getint('parameters', 'max_instances')
         self.max_storage = parser.getint('parameters', 'max_storage')
+
+        self.one_user = parser.get('one', 'one_user')
+        self.one_password = parser.get('one', 'one_password')
