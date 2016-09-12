@@ -8,7 +8,7 @@ def build_template(uuid):
     # context
     context = SubElement(template, "CONTEXT")
     SubElement(context, "NETWORK")       .text = "YES"
-    SubElement(context, "SSH_PUBLIC_KEY").text = "root[SSH_PUBLIC_KEY]"
+    SubElement(context, "SSH_PUBLIC_KEY").text = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDHbKtlGI/JsHMh7c0zwXK6IlPRcAxXurXL5QltOgAe7s6idaq2wFQnSvahKPrb5Dy4LQ5jCjJ5NmnaasIKxV5FN5alefm1AHtyR5Yhl2xw0J5cu0SA1aKONoOlvvT8E9jY8uneRLpLOCZv5zZAKwtNQpAfJRQLyIUfd7B0dAuRiw== Delft3d User"
 
     # CPU
     SubElement(template, "CPU")          .text = "0.1"

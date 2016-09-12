@@ -6,7 +6,8 @@ import threading
 import pickle
 from time import sleep
 import redis
-import aws
+# use the opennebula calls instead of aws calls
+import opennebula as aws
 from settings import Settings
 from worker import Worker
 
