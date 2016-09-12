@@ -5,7 +5,7 @@ import threading
 import pickle
 import redis
 
-import aws
+import opennebula as aws 
 from settings import Settings
 
 

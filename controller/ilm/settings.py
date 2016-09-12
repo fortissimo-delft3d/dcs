@@ -26,3 +26,4 @@ class Settings:
 
         self.one_user = parser.get('one', 'one_user')
         self.one_password = parser.get('one', 'one_password')
+        self.one_host     = parser.get('one', 'one_host')

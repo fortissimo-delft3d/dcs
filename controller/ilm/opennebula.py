@@ -15,13 +15,15 @@ with open('logging.json') as jl:
 settings = Settings()
 
 def get_client():
-    one_endpoint = "http://localhost:2633/RPC2"
+    one_endpoint = "http://" + settings.one_host + ":2633/RPC2"
     client =  oca.Client(settings.one_user + ':' +
                          settings.one_password, one_endpoint)
     return client
 
 def start_machine(ami, instance):
     client = get_client()
+
+    logging.info('trying to start a machine')
 
     if not client:
         logging.error('Cannot connect to OpenNebula')
@@ -78,48 +80,32 @@ def my_booted_machine(reservation_id):
         return None, None
 
 def get_status(instance_id):
-    ec2 = boto.ec2.connect_to_region(settings.aws_region,
-                                     aws_access_key_id=settings.aws_access,
-                                     aws_secret_access_key=settings.aws_secret)
 
-    if not ec2:
-        logging.error('Cannot connect to region %s' % settings.aws_region)
-        return None
-    try:
-        statuses = ec2.get_all_instance_status(instance_ids=[instance_id])
-        if len(statuses) == 1:
-            logging.info('current %s status: %s' % (instance_id, statuses[0].system_status))
-            return statuses[0].system_status
-        return None
-    except Exception, e:
-        logging.exception('Could not get status for %s (%s)' % (instance_id, e))
-        return None
-    finally:
-        if ec2:
-            ec2.close()
+    client = get_client()
+
+    if not client:
+        logging.error('Cannot connect to OpenNebula RPC endpoint')
+        return None, None
+
+    vm = oca.VirtualMachine.new_with_id(instance_id)
+    vm.info()
+
+    return vm.state
+
+    #try:
+    #    statuses = ec2.get_all_instance_status(instance_ids=[instance_id])
+    #    if len(statuses) == 1:
+    #        logging.info('current %s status: %s' % (instance_id, statuses[0].system_status))
+    #        return statuses[0].system_status
+    #    return None
+    #except Exception, e:
+    #    logging.exception('Could not get status for %s (%s)' % (instance_id, e))
+    #    return None
 
 
 def get_max_instances():
-    ec2 = boto.ec2.connect_to_region(settings.aws_region,
-                                     aws_access_key_id=settings.aws_access,
-                                     aws_secret_access_key=settings.aws_secret)
-
-    if not ec2:
-        logging.error('Cannot connect to region %s' % settings.aws_region)
-        return None
-    try:
-        attributes = ec2.describe_account_attributes()
-        for attribute in attributes:
-            if attribute.attribute_name and 'max-instances' in attribute.attribute_name.lower():
-                return int(attribute.attribute_values[0])
-        return 0
-    except Exception, e:
-        logging.exception('Could not get attributes (%s)' % e)
-        return None
-    finally:
-        if ec2:
-            ec2.close()
-
+    return 2
+   
 
 def active_instance_count():
     client = get_client()
