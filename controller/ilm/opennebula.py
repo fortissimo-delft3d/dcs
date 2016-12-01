@@ -15,7 +15,7 @@ with open('logging.json') as jl:
 settings = Settings()
 
 def get_client():
-    one_endpoint = "http://" + settings.one_host + ":2633/RPC2"
+    one_endpoint = settings.one_endpoint
     client =  oca.Client(settings.one_user + ':' +
                          settings.one_password, one_endpoint)
     return client
@@ -68,7 +68,7 @@ def my_booted_machine(reservation_id):
         logging.error('Cannot connect to OpenNebula RPC endpoint')
         return None, None
 
-    vm = oca.VirtualMachine.new_with_id(instance_id)
+    vm = oca.VirtualMachine.new_with_id(client, reservation_id)
     vm.info()
 
     if vm.state == 3:
@@ -104,7 +104,7 @@ def get_status(instance_id):
 
 
 def get_max_instances():
-    return 2
+    return 20
    
 
 def active_instance_count():

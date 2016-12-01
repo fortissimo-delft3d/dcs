@@ -30,7 +30,9 @@ class MachineMidwife(threading.Thread):
 
     def run(self):
         self.apprentice.start()
+        logging.info('MachineMidwife: listening for jobs')
         for item in self.job_pub_sub.listen():
+            logging.info('MachieMidwife: got a job')
             job_id = item['data']
             if job_id == 'KILL':
                 self.apprentice.halt()
@@ -87,9 +89,16 @@ class MachineMidwife(threading.Thread):
 
     def choke_full(self):
         """Can we start more instances?"""
+        logging.debug('MachineMidwife: Checking how many waldos there are')
         instances = self.waldos()
+
+        logging.debug('MachineMidwife: Checking how many active instances there are')
         count = aws.active_instance_count()
+        
+        logging.debug('MachineMidwife: Checking the maximum number of instances')
         max_instances = aws.get_max_instances()
+
+        logging.debug('MachineMidwife: Checking the maximum storage size')
         max_storage = aws.get_storage_usage(instances)
         if count is not None and max_instances is not None and count >= max_instances:
             logging.debug('currently using your maximum AWS EC2 capacity (%d/%d)' % (count, max_instances))

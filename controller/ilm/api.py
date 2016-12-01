@@ -1,8 +1,7 @@
 import os
-import aws
 from flask import Flask, request, jsonify, Response
 from flask.json import dumps
-from flask_autodoc import Autodoc
+from flask_autodoc.autodoc import Autodoc
 from repository import AmiRepository
 from machine_midwife import MachineMidwife
 from consuela import Consuela
@@ -28,7 +27,7 @@ def __get_amis__():
 
 
 def __get_ami_status__(aid):
-    status = aws.get_status(aid)
+    status = "status:ok"  # TODO: change into a real status
     if status:
         return Response(dumps(str(status)), mimetype='application/json')
     raise ApplicationException('Could not get status for %s' % aid)

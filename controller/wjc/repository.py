@@ -16,6 +16,10 @@ class JobRepository:
             self.client = redis.Redis('db')
         except Exception, e:
             logging.exception('Problem instantiating batch/job repository (%s)' % e)
+        self.job_listeners = []
+
+    def add_job_listener(listener):
+        self.job_listeners += listener
 
     def get_all_jobs(self):
         result = []
@@ -38,6 +42,11 @@ class JobRepository:
             if self.client.exists(job_id):
                 job = pickle.loads(self.client.get(job_id))
                 if job is not None:
+                    if job.state != state:
+                        # job has a new state, inform listeners
+                        for listener in self.listeners:
+                            listener.set_job_state(job_id, state)
+
                     job.state = state
                     self.client.set(job_id, pickle.dumps(job))
                     self.client.publish('jobs', job_id)
@@ -55,12 +64,13 @@ class JobRepository:
             result.append([batch_id, batch.state, batch.ami, batch.instance_type, batch.max_nodes, jobs])
         return result
 
-    def execute_batch(self, max_nodes, ami, instance_type):
-        batch_id = 'batch-%s' % uuid.uuid4()
+    def execute_batch(self, max_nodes, ami, instance_type, email=''):
+        batch_id = 'batch-%s' % str(uuid.uuid4())[31:36]
         batch = Batch('received')
         batch.ami = ami
         batch.instance_type = instance_type
         batch.max_nodes = max_nodes
+        batch.email = email
         self.client.set(batch_id, pickle.dumps(batch))
         self.client.publish('batches', batch_id)
         return batch_id
