@@ -12,23 +12,15 @@ dictConfig({
     'disable_existing_loggers': False,
     'formatters': {
         'standard': {'format': '%(asctime)s[%(levelname)s]%(funcName)s:%(message)s',
-                     'datefmt': '%Y-%m-%d %H:%M:%S'},
-        'logstash': {'format': '[%(levelname)s][uuid]:%(message)s'}
+                     'datefmt': '%Y-%m-%d %H:%M:%S'}
     },
     'handlers': {
         'fh': {'class': 'logging.StreamHandler',
                'formatter': 'standard',
                'level': 'DEBUG',
-               'stream': 'ext://sys.stdout'},
-        'ls': {'class': 'logstash.TCPLogstashHandler',
-               'formatter': 'logstash',
-               'level': 'INFO',
-               'host': '[elk]',
-               'port': 5000,
-               'version': 1}
-    },
+               'stream': 'ext://sys.stdout'}    },
     'loggers': {
-        '': {'handlers': ['fh', 'ls'],
+        '': {'handlers': ['fh'],
              'level': 'DEBUG',
              'propagate': True}
     }
@@ -43,25 +35,34 @@ try:
     os.chmod('run', st.st_mode | stat.S_IEXEC)
     # start the 'run' script
     r = requests.post('http://[web]/wjc/jobs/[uuid]/state/running', headers=headers)
+     
+    # define urls for stdout and stderr
+    stdout_url = "http://[web]/wjc/jobs/[uuid]/stdout"
+    stderr_url = "http://[web]/wjc/jobs/[uuid]/stderr"
+     
     output_filename = 'output.log'
     error_filename = 'error.log'
     # mwahahaha, buffer outputs and write them to loggers during execution (non blocking)
-    with io.open(output_filename, 'wb') as output_writer, io.open(output_filename, 'rb', 1) as output_reader, \
-            io.open(error_filename, 'wb') as error_writer, io.open(error_filename, 'rb', 1) as error_reader:
+    with io.open(output_filename, 'wb', 0) as output_writer, io.open(output_filename, 'rt', 1) as output_reader, \
+            io.open(error_filename, 'wb', 0) as error_writer, io.open(error_filename, 'rt', 1) as error_reader:
         process = subprocess.Popen('./run', shell=True, stdout=output_writer, stderr=error_writer)
         while process.poll() is None:
             output_line = output_reader.read()
             error_line = error_reader.read()
             if output_line is not None and len(output_line) > 0:
+                requests.post(stdout_url, data = {'stdout': output_line})
                 logging.info(output_line)
             if error_line is not None and len(error_line) > 0:
+                requests.post(stderr_url, data = {'stderr': error_line})
                 logging.error(error_line)
         process.wait()
         output_line = output_reader.read()
         if output_line is not None and len(output_line) > 0:
+            requests.post(stdout_url, data = {'stdout': output_line})
             logging.info(output_line)
         error_line = error_reader.read()
         if error_line is not None and len(error_line) > 0:
+            requests.post(stderr_url, data = {'stderr': error_line})
             logging.error(error_line)
     # finished
     if process.returncode != 0:

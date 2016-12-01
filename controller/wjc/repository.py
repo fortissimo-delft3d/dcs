@@ -109,3 +109,46 @@ class JobRepository:
                 self.client.publish('batches', batch_id)
                 return 'ok'
         return 'not a batch'
+
+    def add_job_output_line(self, job_id, output_line):
+        if job_id.startswith('job-'):
+            output_key = "stdout-%s" % job_id
+            if self.client.exists(output_key):
+                output = self.client.get(output_key) + output_line
+            else:
+                output = output_line
+            # store output again
+            self.client.put(output_key, output)
+            return 'ok'
+        return 'not a job'
+
+    def add_job_error_line(self, job_id, error_line):
+        if job_id.startswith('job-'):
+            error_key = "stderr-%s" % job_id
+            if self.client.exists(error_key):
+                error = self.client.get(error_key) + error_line
+            else:
+                error = error_line
+            # store output again
+            self.client.put(error_key, error)
+            return 'ok'
+        return 'not a job'
+
+    def get_job_output(self, job_id):
+        if job_id.startswith('job-'):
+            output_key = "stdout-%s" % job_id
+            if self.client.exists(output_key):
+                return self.client.get(output_key)
+            else:
+                output = "no job output found"
+        return 'not a job'
+
+    def get_job_error(self, job_id):
+        if job_id.startswith('job-'):
+            error_key = "stdout-%s" % job_id
+            if self.client.exists(error_key):
+                return self.client.get(error_key)
+            else:
+                error = "no job error found"
+        return 'not a job'
+

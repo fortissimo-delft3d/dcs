@@ -1,7 +1,7 @@
 from json import dumps
 import os
 from flask import Flask, Response, jsonify, request
-from flask_autodoc import Autodoc
+from flask_autodoc.autodoc import Autodoc
 from repository import JobRepository
 from job_dictator import JobDictator
 from batch_midwife import BatchMidwife
@@ -44,7 +44,7 @@ def __set_job_state__(name, new_state):
 def __batch_submit__(data, max_nodes):
     batch_data = data.get_json(force=True)
     repository = app.config['REPOSITORY']
-    aid = repository.execute_batch(max_nodes, batch_data['ami'], batch_data['instance_type'])
+    aid = repository.execute_batch(max_nodes, batch_data['ami'], batch_data['instance_type'], batch_data['email'])
     return Response(dumps(aid), mimetype='application/json')
 
 
@@ -65,6 +65,26 @@ def __set_batch_state__(name, new_state):
     repository = app.config['REPOSITORY']
     return Response(dumps(repository.set_batch_state(name, new_state)), mimetype='application/json')
 
+
+def __add_job_stdout_line__(job_id, line):
+    repository = app.config['REPOSITORY']
+    return Response(repository.add_job_output_line(job_id, line),
+                    mimetype='text/plain')
+
+def __add_job_stderr_line__(job_id, line):
+    repository = app.config['REPOSITORY']
+    return Response(repository.add_job_error_line(job_id, line),
+                    mimetype='text/plain')
+
+def __get_job_stdout__(job_id):
+    repository = app.config['REPOSITORY']
+    return Response(repository.get_job_output(job_id),
+                    mimetype='text/plain')
+ 
+def __get_job_stderr__(job_id):
+    repository = app.config['REPOSITORY']
+    return Response(repository.get_job_error(job_id),
+                    mimetype='text/plain')
 
 # actual api :P
 
@@ -131,6 +151,29 @@ def set_batch_state(name, new_state):
     """ set batch state """
     return __set_batch_state__(name, new_state)
 
+@app.route('/jobs/<name>/stdout', methods=['POST'])
+@auto.doc()
+def add_job_stdout_line(name):
+    """ add a job stdout line """
+    return __add_job_stdout_line__(name, request.form['stdout'])
+
+@app.route('/jobs/<name>/stderr', methods=['POST'])
+@auto.doc()
+def add_job_stderr_line(name):
+    """ add a job stderr line """
+    return __add_job_stderr_line__(name, request.form['stderr'])
+
+@app.rout('/jobs/<name>/stdout', methods=['GET'])
+@auto.doc()
+def get_job_stdout(name):
+    """ get the job output """
+    return __get_job_stdout__(name)
+
+@app.rout('/jobs/<name>/stderr', methods=['GET'])
+@auto.doc()
+def get_job_stderr(name):
+    """ get the job error """
+    return __get_job_stderr__(name)
 
 # register error handlers
 class ApplicationException(Exception):
