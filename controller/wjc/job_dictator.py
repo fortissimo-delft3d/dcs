@@ -13,6 +13,8 @@ import requests
 import paramiko
 import scp
 import socket
+import smtplib
+from email.mime.text import MIMEText
 
 from settings import Settings
 
@@ -35,6 +37,27 @@ class JobDictator(threading.Thread):
         while self.running:
             self.aladeen()
             sleep(60)
+
+    def send_email(self, recipient, job_id, web, message_type):
+        if message_type == "starting":
+            job_output_base = "http://%s/wjc/jobs/%s" % (web, job_id)
+            subject = "Job with id %s starting" % job_id
+            body    = ( "The job with job id " + job_id + " is starting; \n" +
+                        "The output can be followed on: \n" +
+                        "   output : " + job_output_base + "/stdout \n" +
+                        "   errors : " + job_output_base + "/stderr \n" )
+        elif message_type == "finished":
+            subject = "Job with job id %s finished." % job_id
+            body    = "The job with job id " + job_id + " has finished. \n"
+        
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From']    = 'lykle.voort@surfsara.nl'
+        msg['To']      = recipient
+        
+        s = smtplib.SMTP('mta.surfsara.nl')
+        s.sendmail(msg['From'], [msg['To']], msg.as_string())
+    
 
     def aladeen(self):
         for job_id in [job_key for job_key in self.client.keys() if job_key.startswith('job-')]:  # Redis keys(pattern='*') does not filter at all.
@@ -89,6 +112,12 @@ class JobDictator(threading.Thread):
         """Copy a job to a worker and start the job."""
 
         logging.info('Found job %s to transmit to worker, preparing script.' % job_id)
+        
+        batch = pickle.loads(self.client.get(batch_id))
+        
+        if batch.email != '':
+            self.send_email(batch.email, job_id, self.settings.web, "starting") 
+
         ramon = self.ramon
         ramon = ramon.replace('[web]', self.settings.web)
         ramon = ramon.replace('[elk]', self.settings.elk)
@@ -190,6 +219,10 @@ class JobDictator(threading.Thread):
                     ssh.exec_command('rm -rf %s' % job_id)  # Linux only
                     ssh.exec_command('rm -f %s.sh' % job_id)  # Linux only
                 logging.info('transferred results for %s, saved to %s' % (job_id, destination))
+                batch = pickle.loads(self.client.get(batch_id))
+                if batch.email != '':
+                    self.send_email(batch.email, job_id, self.settings.web, "finished") 
+
             except Exception as e:
                 logging.error('Error in pull: %s' % e.message)
                 logging.warning('Fatal error while retrieving job %s on worker %s, clean up manually.' % (job_id, worker.instance))
