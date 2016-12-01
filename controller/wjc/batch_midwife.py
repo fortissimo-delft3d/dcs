@@ -43,7 +43,10 @@ class BatchMidwife(threading.Thread):
             batch = pickle.loads(self.client.get(batch_id))
             logging.debug('BatchMidwife: Batch %s has state %s' % (batch_id, batch.state))
             if batch.state != 'uploaded':
+                logging.debug('BatchMidwife: waiting for upload')
                 continue
+
+            logging.debug('BatchMidwife: job uploaded')
             #
             if batch.jobs is not None:
                 continue

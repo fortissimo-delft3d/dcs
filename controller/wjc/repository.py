@@ -44,7 +44,7 @@ class JobRepository:
                 if job is not None:
                     if job.state != state:
                         # job has a new state, inform listeners
-                        for listener in self.listeners:
+                        for listener in self.job_listeners:
                             listener.set_job_state(job_id, state)
 
                     job.state = state
@@ -118,7 +118,7 @@ class JobRepository:
             else:
                 output = output_line
             # store output again
-            self.client.put(output_key, output)
+            self.client.set(output_key, output)
             return 'ok'
         return 'not a job'
 
@@ -130,7 +130,7 @@ class JobRepository:
             else:
                 error = error_line
             # store output again
-            self.client.put(error_key, error)
+            self.client.set(error_key, error)
             return 'ok'
         return 'not a job'
 
@@ -140,8 +140,9 @@ class JobRepository:
             if self.client.exists(output_key):
                 return self.client.get(output_key)
             else:
-                output = "no job output found"
-        return 'not a job'
+                return "no job output found"
+        else:
+            return '"' + job_id + '" is not a job'
 
     def get_job_error(self, job_id):
         if job_id.startswith('job-'):
@@ -149,6 +150,7 @@ class JobRepository:
             if self.client.exists(error_key):
                 return self.client.get(error_key)
             else:
-                error = "no job error found"
-        return 'not a job'
+                return "no job error found"
+        else:
+            return 'not a job'
 

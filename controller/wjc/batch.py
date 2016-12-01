@@ -8,6 +8,7 @@ class Batch:
     """
     ami = None
     instance_type = None
+    email         = None
     max_nodes = 0
     jobs = None
 

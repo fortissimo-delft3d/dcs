@@ -129,7 +129,7 @@ class JobDictator(threading.Thread):
                 luke = '/tmp/store/%s/%s' % (batch_id, job_id)
                 with scp.SCPClient(ssh.get_transport()) as s_scp:
                     logging.debug('Copying job data to worker through scp.')
-                    s_scp.put(luke, job_id, recursive=True)
+                    s_scp.put(luke, "./", recursive=True)
                 with scp.SCPClient(ssh.get_transport()) as s_scp:
                     logging.debug('Copying job runscript to worker through scp.')
                     s_scp.put(ramon_path, ramon_file)
@@ -144,7 +144,8 @@ class JobDictator(threading.Thread):
                     raise RuntimeError('***failed to set execution bit on job runscript on the worker***')
 
                 # Start the job on the worker.
-                start = 'virtualenv venv\nsource venv/bin/activate\npip install --upgrade pip\npip install python-logstash requests\nnohup ./%s  > /dev/null 2>&1 &\n' % ramon_file  # Linux only
+                #start = 'virtualenv venv\nsource venv/bin/activate\npip install --upgrade pip\npip install python-logstash requests\nnohup ./%s  > /dev/null 2>&1 &\n' % ramon_file  # Linux only
+                start = '. ./.bash_profile; nohup ./%s  > /dev/null 2>&1 &\n' % ramon_file  # Linux only
                 logging.debug('calling remote start with %s' % start)
                 _, out, err = ssh.exec_command(start)
                 output = out.readlines()

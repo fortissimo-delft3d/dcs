@@ -163,13 +163,13 @@ def add_job_stderr_line(name):
     """ add a job stderr line """
     return __add_job_stderr_line__(name, request.form['stderr'])
 
-@app.rout('/jobs/<name>/stdout', methods=['GET'])
+@app.route('/jobs/<name>/stdout', methods=['GET'])
 @auto.doc()
 def get_job_stdout(name):
     """ get the job output """
     return __get_job_stdout__(name)
 
-@app.rout('/jobs/<name>/stderr', methods=['GET'])
+@app.route('/jobs/<name>/stderr', methods=['GET'])
 @auto.doc()
 def get_job_stderr(name):
     """ get the job error """

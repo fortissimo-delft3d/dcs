@@ -50,10 +50,10 @@ def terminate_machine(instance_id):
         logging.error('Cannot connect to OpenNebula RPC endpoint')
         return None, None
 
-    vm = oca.VirtualMachine.new_with_id(instance_id)
+    vm = oca.VirtualMachine.new_with_id(client, instance_id)
     
     try:
-        vm.shutdown_hard()
+        vm.shutdown()
         return True
     except Exception, e:
         logging.exception('Cannot terminate instance %s (%s)' % (instance_id, e))
@@ -69,14 +69,14 @@ def my_booted_machine(reservation_id):
         return None, None
 
     vm = oca.VirtualMachine.new_with_id(client, reservation_id)
-    vm.info()
+    rv = vm.info()
 
     if vm.state == 3:
         ip_address = vm["TEMPLATE"].find("NIC").find("IP").text
         return reservation_id, ip_address
 
     else:
-        logging.exception('Could not get reservations for %s (%s)' % (reservation_id, e))
+        logging.info("Machine %s not running; state = %s" % (reservation_id, vm.state))
         return None, None
 
 def get_status(instance_id):
@@ -104,7 +104,7 @@ def get_status(instance_id):
 
 
 def get_max_instances():
-    return 20
+    return 100
    
 
 def active_instance_count():

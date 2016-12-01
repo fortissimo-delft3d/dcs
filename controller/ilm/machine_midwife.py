@@ -32,8 +32,8 @@ class MachineMidwife(threading.Thread):
         self.apprentice.start()
         logging.info('MachineMidwife: listening for jobs')
         for item in self.job_pub_sub.listen():
-            logging.info('MachieMidwife: got a job')
             job_id = item['data']
+            logging.info('MachineMidwife: got job: %s' % job_id)
             if job_id == 'KILL':
                 self.apprentice.halt()
                 self.job_pub_sub.unsubscribe()
@@ -54,6 +54,7 @@ class MachineMidwife(threading.Thread):
             recycled = False
             for worker_id in [worker_key for worker_key in self.client.keys() if worker_key.startswith('jm-')]:  # Redis keys(pattern='*') does not filter at all.
                 if not self.client.exists(worker_id):
+                    logging.debug('worker with id "%s" does not exist, not using this worker')
                     continue
                 existing_worker = pickle.loads(self.client.get(worker_id))
                 if existing_worker.batch_id == job.batch_id and existing_worker.job_id is None:
@@ -141,7 +142,7 @@ class MachineMidwife(threading.Thread):
             while self.running:
                 self.rise_and_shine()
                 self.check_newborn()
-                sleep(300)
+                sleep(30)
 
         def rise_and_shine(self):
             logging.debug('MachineMidwife apprentice: Checking for delayed jobs to signal.')
