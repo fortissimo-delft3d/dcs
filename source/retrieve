@@ -16,6 +16,7 @@ parser.add_argument('key_file', help='specifiy key file for connecting with the 
 parser.add_argument('batch_id', help='batch to download')
 parser.add_argument('path', help='path to download to')
 parser.add_argument('--only', help='if specified, only download files matching this pattern')
+parser.add_argument('--clean', type=bool, help='if specified, clean up filenames', default=False)
 
 args = parser.parse_args()
 
@@ -46,8 +47,11 @@ with paramiko.SSHClient() as ssh:
                 sscp.get(remote_file, local_file, recursive=True)
         else:
             sscp.get(args['batch_id'], args['path'], recursive=True)
-for source_directory in os.listdir(os.path.join(args['path'], args['batch_id'])):
-    # Clean "job-" prefix and "_1" (bumboo) postfix from directory to form the local target directory.
-    target_directory = source_directory[4:str.rfind(source_directory, '_')]
-    shutil.move(os.path.join(args['path'], args['batch_id'], source_directory), os.path.join(args['path'], args['batch_id'], target_directory))
+
+if args['clean']:
+    for source_directory in os.listdir(os.path.join(args['path'], args['batch_id'])):
+        # Clean "job-" prefix and "_1" (bumboo) postfix from directory to form the local target directory.
+        target_directory = source_directory[4:str.rfind(source_directory, '_')]
+        shutil.move(os.path.join(args['path'], args['batch_id'], source_directory), os.path.join(args['path'], args['batch_id'], target_directory))
+
 print 'download done to %s' % args['path']
