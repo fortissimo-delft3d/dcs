@@ -25,9 +25,12 @@ try:
 except:
     pass
 for job in jobs:
+    # only print jobs belonging to this batch
     if job[1] == args['code']:
         jw = next(iter([w for w in workers if w[1] == job[0]]), None)
         if not jw:
             print '%s: status %s, currently no worker' % (job[0], job[2])
         else:
             print '%s: status %s, running on %s' % (job[0], job[2], jw[4])
+            print '  stdout: http://%s/wjc/jobs/%s/stdout' % (args['server'], job[0])
+            print '  stderr: http://%s/wjc/jobs/%s/stderr' % (args['server'], job[0])
